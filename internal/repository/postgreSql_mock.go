@@ -20,7 +20,7 @@ func (p *PostgreMock) InsertUser(ctx context.Context, user *User) error {
 
 func (p *PostgreMock) GetUserById(ctx context.Context, id int) (*User, error) {
 	for _, v := range p.pool {
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(600 * time.Millisecond)
 		if v.Id == id {
 			return &v, nil
 		}

@@ -26,8 +26,9 @@ func (p *Server) InitRouters() {
 	p.mux = mx.NewRouter()
 	p.mux.HandleFunc("/ping", p.HandlePing).
 		Methods(http.MethodGet)
-	p.mux.HandleFunc("/users/", p.HandleGetUsers).
-		Queries("offset", "limit").
+	p.mux.HandleFunc("/users", p.HandleGetUsers).
+		Queries("offset", "{offset:[0-9]+}").
+		Queries("limit", "{limit:[0-9]+}").
 		Methods(http.MethodGet)
 	p.mux.HandleFunc("/users/{id:[0-9]+}", p.HandleGetUserById).
 		Methods(http.MethodGet)
