@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	uuid "github.com/satori/go.uuid"
 )
 
 type FuncLogging func(text string)
@@ -24,25 +23,18 @@ type PostgreSql struct {
 }
 
 func (p *PostgreSql) InsertUser(ctx context.Context, user *User) error {
-	u1, ok := ctx.Value("LogID").(uuid.UUID)
-	if !ok {
-		u1 = uuid.NewV4()
-	}
+
 	tx := p.pool.Begin()
-	p.logFunc("begin tx " + u1.String())
-	defer func(tx *gorm.DB) {
+	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			p.logFunc("tx " + u1.String() + " rollback")
 		}
-	}(tx)
+	}()
 	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
-		p.logFunc("tx " + u1.String() + " rollback")
 		return err
 	}
 	tx.Commit()
-	p.logFunc("tx" + u1.String() + " commit")
 	return nil
 }
 
@@ -68,7 +60,7 @@ func (p *PostgreSql) Ping(ctx context.Context) error {
 }
 
 func NewPostgreDB(config *DbConfig, fn FuncLogging) (IRepository, error) {
-	conn := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s",
+	conn := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable",
 		config.Host, config.Port, config.User, config.DbName, config.Password)
 	poolConn, err := gorm.Open("postgres", conn)
 	if err != nil {

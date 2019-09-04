@@ -11,12 +11,12 @@ type User struct {
 }
 
 type PrivateUser struct {
-	Id       int       `gorm:"column:id" json:"id, int" reform:"id,pk"`
-	CreateOn time.Time `gorm:"column:created_on" json:"create_on" reform:"created_on"`
+	Id       int       `gorm:"column:id" json:"id, int" `
+	CreateOn time.Time `gorm:"column:created_on" json:"create_on"`
 }
 
 type PublicUser struct {
-	Name string `gorm:"column:name" json:"name" reform:"name"`
+	Name string `gorm:"column:name" json:"name"`
 }
 
 type IRepository interface {

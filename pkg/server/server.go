@@ -23,31 +23,41 @@ func Logging(text string) {
 }
 
 func (p *Server) InitRouters() {
+	log.Println("Старт инициализация routes")
 	p.mux = mx.NewRouter()
 	p.mux.HandleFunc("/ping", p.HandlePing).
 		Methods(http.MethodGet)
-	p.mux.HandleFunc("/users/", p.HandleGetUsers).
-		Queries("offset", "limit").
+	p.mux.HandleFunc("/users", p.HandleGetUsers).
+		Queries("offset", "{offset:[0-9]+}").
+		Queries("limit", "{limit:[0-9]+}").
 		Methods(http.MethodGet)
 	p.mux.HandleFunc("/users/{id:[0-9]+}", p.HandleGetUserById).
 		Methods(http.MethodGet)
 	p.mux.HandleFunc("/users/", p.HandleInsertUser).
 		Methods(http.MethodPost)
 	p.mux.Use(p.loggingMiddleware)
+	log.Println("Конец инициализации routes")
 }
 
-func (p *Server) InitDb() {
+func (p *Server) InitDb() (err error) {
+	log.Println("Старт инициализация соединения с db")
 	conf := &repository.DbConfig{
-		Host:     "localhost",
+		Host:     "db",
 		Port:     5432,
 		User:     "postgres",
-		Password: "",
-		DbName:   "testing",
+		Password: "12345",
+		DbName:   "test",
 	}
-	p.db, _ = repository.NewPostgreDB(conf, Logging)
+	p.db, err = repository.NewPostgreDB(conf, Logging)
+	if err != nil {
+		log.Printf("Ошибка при соединение с БД %v\n", err)
+	}
+	log.Println("Конец инициализация соединения с db")
+	return nil
 }
 
 func (p *Server) Run(port int) {
+	log.Printf("Запуск http сервера на порту %d\n", port)
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT)
 
@@ -64,7 +74,7 @@ func (p *Server) Run(port int) {
 
 	go func(serv *http.Server, exitHttp <-chan os.Signal) {
 		<-exitHttp
-		log.Println("Server is closing")
+		log.Println("Сервер останавливается...")
 		ctx, cancel := context.WithTimeout(context.Background(),
 			10*time.Second)
 		defer cancel()
@@ -73,9 +83,9 @@ func (p *Server) Run(port int) {
 		}
 	}(srv, exit)
 
-	log.Println("Server is started")
+	log.Println("Сервер запущен")
 	if err := srv.ListenAndServe(); err != nil {
 
 	}
-	log.Println("Server is closed")
+	log.Println("Сервер остановлен")
 }

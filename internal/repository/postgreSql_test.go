@@ -50,10 +50,6 @@ func Setup() {
 	p.repo = repo
 }
 
-func Close() {
-
-}
-
 func TestPostgreSql_Fetch(t *testing.T) {
 	Setup()
 	p.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" LIMIT 3 OFFSET 0 `)).
@@ -244,28 +240,28 @@ func TestPostgreSql_InsertUser_Err_Uuid(t *testing.T) {
 	}
 }
 
-func TestNewPostgreDB(t *testing.T) {
-	dbConf := DbConfig{
-		Port:     5432,
-		Host:     "localhost",
-		DbName:   "test",
-		User:     "ra",
-		Password: "123456",
-	}
-	_, err := NewPostgreDB(&dbConf, func(text string) {
-		log.Println(text)
-	})
-	if err != nil {
-		t.Errorf("expected nil, got:\n %s", err)
-	}
-}
+//func TestNewPostgreDB(t *testing.T) {
+//	dbConf := DbConfig{
+//		Port:     5433,
+//		Host:     "localhost",
+//		DbName:   "test",
+//		User:     "postgres",
+//		Password: "12345",
+//	}
+//	_, err := NewPostgreDB(&dbConf, func(text string) {
+//		log.Println(text)
+//	})
+//	if err != nil {
+//		t.Errorf("expected nil, got:\n %s", err)
+//	}
+//}
 
 func TestNewPostgreDB_Error(t *testing.T) {
 	dbConf := DbConfig{
 		Port:     5432,
-		Host:     "localhost",
+		Host:     "db",
 		DbName:   "test",
-		User:     "ra",
+		User:     "postgres",
 		Password: "",
 	}
 	_, err := NewPostgreDB(&dbConf, func(text string) {

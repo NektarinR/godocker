@@ -18,28 +18,34 @@ func (p *Server) HandlePing(w http.ResponseWriter, r *http.Request) {
 
 //Get method - /users?offset=12&limit=12
 func (p *Server) HandleGetUsers(w http.ResponseWriter, r *http.Request) {
-	offset, limit, err := parseURL(r)
+	vars := mx.Vars(r)
+	offset, limit, err := parseURL(vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	ctx, _ := context.WithTimeout(r.Context(), 2*time.Second)
 	usrRes := make(chan []repository.User, 1)
-	go func(insideCtx context.Context, res chan<- []repository.User) {
+	exitRequest := make(chan struct{}, 1)
+	go func(insideCtx context.Context, res chan<- []repository.User, exit chan<- struct{}) {
 		usrs, err := p.db.Fetch(insideCtx, offset, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			exit <- struct{}{}
 			return
 		}
 		res <- usrs
-	}(ctx, usrRes)
+	}(ctx, usrRes, exitRequest)
 	select {
+	case <-exitRequest:
+		return
 	case users := <-usrRes:
 		result, err := json.Marshal(users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(http.StatusOK)
 		w.Write(result)
 	case <-ctx.Done():
 		http.Error(w, "server is busy", http.StatusInternalServerError)
@@ -90,12 +96,12 @@ func (p *Server) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	ctx, _ := context.WithTimeout(r.Context(), 2*time.Second)
 	userChan := make(chan *repository.User, 1)
 	exitRequest := make(chan struct{}, 1)
-	go func(insideCtx context.Context,
-		res chan<- *repository.User, exit chan<- struct{}) {
+	go func(insideCtx context.Context, res chan<- *repository.User, exit chan<- struct{}) {
 		usr, err := p.db.GetUserById(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			exit <- struct{}{}
+			return
 		}
 		res <- usr
 	}(ctx, userChan, exitRequest)
@@ -116,8 +122,7 @@ func (p *Server) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func parseURL(r *http.Request) (int, int, error) {
-	vars := mx.Vars(r)
+func parseURL(vars map[string]string) (int, int, error) {
 	offsetSTR, ok := vars["offset"]
 	if !ok {
 		return 0, 0, errors.New("bad query")
