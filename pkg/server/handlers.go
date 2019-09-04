@@ -45,6 +45,7 @@ func (p *Server) HandleGetUsers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(http.StatusOK)
 		w.Write(result)
 	case <-ctx.Done():
 		http.Error(w, "server is busy", http.StatusInternalServerError)
@@ -95,8 +96,7 @@ func (p *Server) HandleGetUserById(w http.ResponseWriter, r *http.Request) {
 	ctx, _ := context.WithTimeout(r.Context(), 2*time.Second)
 	userChan := make(chan *repository.User, 1)
 	exitRequest := make(chan struct{}, 1)
-	go func(insideCtx context.Context,
-		res chan<- *repository.User, exit chan<- struct{}) {
+	go func(insideCtx context.Context, res chan<- *repository.User, exit chan<- struct{}) {
 		usr, err := p.db.GetUserById(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
