@@ -1,9 +1,17 @@
 package main
 
-import "github.com/NektarinR/godocker/pkg/server"
+import (
+	"github.com/NektarinR/godocker/pkg/server"
+	"os"
+	"strconv"
+)
 
 func main() {
 	srv := server.Server{}
-
-	srv.Run(8081)
+	evnvPort := os.Getenv("HTTP_PORT")
+	port, err := strconv.Atoi(evnvPort)
+	if err != nil {
+		panic(err)
+	}
+	srv.Run(port)
 }
