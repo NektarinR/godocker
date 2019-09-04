@@ -1,0 +1,21 @@
+version: '3.7'
+services:
+  web:
+    build: .
+    restart: always
+    ports:
+      - 15000:8081
+    environment:
+      HTTP_PORT: 8081
+    links:
+      - db
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 12345
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 29999:8080
